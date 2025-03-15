@@ -8,7 +8,7 @@ A web application to track your progress across multiple competitive programming
 - Visualize problem-solving patterns and rating history
 - Monitor progress across difficulty levels
 - View recent submissions across platforms
-
+  ![image url](https://github.com/Garimakushh/CP-progress-tracker/blob/dfbd7ecad071c7ab902ab776967ddfb08eb385be/CP%20Tracker%20results/Screenshot%20(74).png)
 ## Tech Stack
 
 - Node.js and Express
@@ -23,16 +23,6 @@ A web application to track your progress across multiple competitive programming
 2. Install dependencies: `npm install`
 3. Create a `.env` file with your configuration
 4. Start the application: `npm start`
-
-## Environment Variables
-
-Create a `.env` file with the following:
-
-```
-PORT=5000
-SESSION_SECRET=your_session_secret_key_here
-MONGODB_URI=mongodb://localhost:27017/cp-tracker
-```
 
 ## Platforms Supported
 
