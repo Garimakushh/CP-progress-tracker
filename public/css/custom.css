@@ -1,0 +1,127 @@
+
+/* Custom styles for CP Progress Tracker */
+
+/* General styles */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Theme transitions */
+html {
+  transition: color-scheme 0.5s ease, background-color 0.5s ease;
+}
+
+/* Navbar styles */
+.navbar-brand {
+  font-weight: 600;
+}
+
+/* Card styles */
+.card {
+  background-color:bisque;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+  background-color: aliceblue;
+}
+
+/* Stats card animations */
+.stats-card {
+  overflow: hidden;
+  position: relative;
+}
+
+.stats-card:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.stats-card:hover:after {
+  transform: translateX(100%);
+}
+
+/* Dashboard charts */
+.chart-container {
+  border-radius: 0.25rem;
+}
+
+/* Profile page */
+.avatar-placeholder {
+  font-weight: bold;
+  font-size: 2rem;
+}
+
+/* Codeforces rating colors */
+.cf-newbie {
+  color: #999999;
+}
+
+.cf-pupil {
+  color: #008000;
+}
+
+.cf-specialist {
+  color: #03a89e;
+}
+
+.cf-expert {
+  color: #0000ff;
+}
+
+.cf-candidate-master {
+  color: #aa00aa;
+}
+
+.cf-master {
+  color: #ff8c00;
+}
+
+.cf-international-master {
+  color: #ff8c00;
+}
+
+.cf-grandmaster {
+  color: #ff0000;
+}
+
+.cf-international-grandmaster {
+  color: #ff0000;
+}
+
+.cf-legendary-grandmaster {
+  color: #ff0000;
+}

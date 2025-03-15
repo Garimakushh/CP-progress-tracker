@@ -1,0 +1,75 @@
+
+<%- include('layouts/main', { title: 'Profile', styles: '', scripts: '' }) %>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <h2 class="text-center mb-4">Your Profile</h2>
+        
+        <% if (locals.success) { %>
+        <div class="alert alert-success" role="alert">
+          <%= success %>
+        </div>
+        <% } %>
+        
+        <% if (locals.error) { %>
+        <div class="alert alert-danger" role="alert">
+          <%= error %>
+        </div>
+        <% } %>
+        
+        <div class="row mb-4">
+          <div class="col-md-4 text-center">
+            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 100px; height: 100px;">
+              <%= user.username.charAt(0).toUpperCase() %>
+            </div>
+            <h5><%= user.username %></h5>
+            <p class="text-muted"><%= user.email %></p>
+            <p class="text-muted small">Joined: <%= new Date(user.created_at).toLocaleDateString() %></p>
+          </div>
+          
+          <div class="col-md-8">
+            <form action="/profile" method="POST">
+              <h4 class="mb-3">Platform Usernames</h4>
+              
+              <div class="mb-3">
+                <label for="codeforces_handle" class="form-label">
+                  <i class="fas fa-fire text-danger me-1"></i> Codeforces Handle
+                </label>
+                <input type="text" class="form-control" id="codeforces_handle" name="codeforces_handle" value="<%= user.codeforces_handle || '' %>">
+              </div>
+              
+              <div class="mb-3">
+                <label for="leetcode_username" class="form-label">
+                  <i class="fas fa-laptop-code text-success me-1"></i> LeetCode Username
+                </label>
+                <input type="text" class="form-control" id="leetcode_username" name="leetcode_username" value="<%= user.leetcode_username || '' %>">
+              </div>
+              
+              <div class="mb-3">
+                <label for="codechef_username" class="form-label">
+                  <i class="fas fa-utensils text-warning me-1"></i> CodeChef Username
+                </label>
+                <input type="text" class="form-control" id="codechef_username" name="codechef_username" value="<%= user.codechef_username || '' %>">
+               
+              </div>
+              
+              <div class="mb-3">
+                <label for="geeksforgeeks_username" class="form-label">
+                  <i class="fas fa-graduation-cap text-primary me-1"></i> GeeksforGeeks Username
+                </label>
+                <input type="text" class="form-control" id="geeksforgeeks_username" name="geeksforgeeks_username" value="<%= user.geeksforgeeks_username || '' %>">
+              
+              </div>
+              
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Update Profile</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

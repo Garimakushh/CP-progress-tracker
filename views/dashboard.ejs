@@ -1,0 +1,446 @@
+<%- include('layouts/main', { title: 'Dashboard', styles: `
+<style>
+  .refresh-btn {
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+  }
+  .refresh-btn:hover {
+    transform: rotate(180deg);
+  }
+  .stats-card {
+    transition: all 0.3s ease;
+  }
+  .stats-card:hover {
+    transform: translateY(-5px);
+  }
+</style>
+`, scripts: `
+<script src="/js/api.js"></script>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+          loadUserStats();
+          loadRecentSubmissions();
+
+          // Refresh data
+          document.getElementById('refreshData').addEventListener('click', async () => {
+            const refreshBtn = document.getElementById('refreshData');
+            const refreshText = document.getElementById('refreshText');
+
+            refreshBtn.classList.add('fa-spin');
+            refreshText.textContent = 'Refreshing...';
+
+            try {
+              const response = await refreshUserData();
+
+              if (response.success) {
+                loadUserStats();
+                loadRecentSubmissions();
+                document.getElementById('lastRefresh').textContent = new Date(response.last_refresh).toLocaleString();
+
+                // Show success alert
+                const alertContainer = document.getElementById('alertContainer');
+  alertContainer.innerHTML = "<div class='alert alert-danger alert-dismissible fade show' role='alert'>" +
+    "Failed to refresh data. Please try again." +
+    "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
+    "</div>";
+   } else {
+                throw new Error(response.error || 'Failed to refresh data');
+              }
+            } catch (error) {
+              console.error('Error refreshing data:', error);
+
+              // Show error alert
+              const alertContainer = document.getElementById('alertContainer');
+alertContainer.innerHTML = "<div class='alert alert-danger alert-dismissible fade show' role='alert'>" +
+  "Failed to refresh data. Please try again." +
+  "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
+  "</div>";
+
+            } finally {
+              refreshBtn.classList.remove('fa-spin');
+              refreshText.textContent = 'Refresh Data';
+            }
+          });
+        });
+
+        async function loadUserStats() {
+          try {
+            const stats = await fetchUserStats();
+
+            // Update total solved problems
+            document.getElementById('totalSolved').textContent = stats.total_solved;
+
+            // Update platform-specific stats
+            document.getElementById('codeforcesSolved').textContent = stats.codeforces_solved;
+            document.getElementById('leetcodeSolved').textContent = stats.leetcode_solved;
+
+            // Update platform cards visibility
+            const platformCards = {
+              'codeforces': document.getElementById('codeforcesCard'),
+              'leetcode': document.getElementById('leetcodeCard')
+            };
+
+            stats.active_platforms.forEach(platform => {
+              if (platformCards[platform]) {
+                platformCards[platform].classList.remove('d-none');
+              }
+            });
+
+            // Update ratings if available
+            if (stats.current_codeforces_rating > 0) {
+              document.getElementById('codeforcesRating').textContent = stats.current_codeforces_rating;
+            }
+            if (stats.current_Leetcode_rating > 0) {
+              document.getElementById('LeetcodeRating').textContent = stats.current_Leetcode_rating;
+            }
+            if (stats.current_codeChef_rating > 0) {
+              document.getElementById('codeChefRating').textContent = stats.current_codeChef_rating;
+            }
+            if (stats.current_GeeksforGeeks_rating > 0) {
+              document.getElementById('GeeksforGeeksRating').textContent = stats.current_GeeksforGeeks_rating;
+            }
+
+            // Update last refresh time
+            if (stats.last_refresh) {
+              document.getElementById('lastRefresh').textContent = new Date(stats.last_refresh).toLocaleString();
+            }
+
+            // Create/update charts
+            createPlatformDistributionChart(stats);
+            createDifficultyDistributionChart(stats);
+            createRatingHistoryChart(stats.rating_history);
+
+          } catch (error) {
+            console.error('Error loading chart data:', error);
+          }
+        }
+
+        async function loadRecentSubmissions() {
+  try {
+    const submissions = await fetchRecentSubmissions();
+    const submissionsContainer = document.getElementById('recentSubmissions');
+
+    if (!submissions || submissions.length === 0) {
+      submissionsContainer.innerHTML = '<p class="text-muted">No recent submissions found.</p>';
+      return;
+    }
+
+    let html = '';
+    submissions.forEach(sub => {
+      const statusClass = sub.status === 'Accepted' ? 'text-success' : 'text-danger';
+      const platformIcon = getPlatformIcon(sub.platform);
+
+      html += '<div class="card mb-2">' +
+                '<div class="card-body py-2">' +
+                  '<div class="row align-items-center">' +
+                    '<div class="col-md-1 text-center">' +
+                      '<i class="' + platformIcon + '"></i>' +
+                    '</div>' +
+                    '<div class="col-md-6">' +
+                      '<h6 class="mb-0">' + sub.problem_name + '</h6>' +
+                      '<small class="text-muted">' + sub.platform + ' | ' + (sub.difficulty || 'Unknown') + '</small>' +
+                    '</div>' +
+                    '<div class="col-md-3">' +
+                      '<span class="' + statusClass + '">' + sub.status + '</span>' +
+                    '</div>' +
+                    '<div class="col-md-2 text-end">' +
+                      '<small class="text-muted">' + sub.time + '</small>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+              '</div>';
+    });
+
+    submissionsContainer.innerHTML = html;
+  } catch (error) {
+    console.error('Error loading recent submissions:', error);
+    document.getElementById('recentSubmissions').innerHTML =
+      '<div class="alert alert-danger">Failed to load recent submissions.</div>';
+  }
+}
+
+function getPlatformIcon(platform) {
+  switch (platform.toLowerCase()) {
+    case 'codeforces': return 'fas fa-fire text-danger';
+    case 'leetcode': return 'fas fa-laptop-code text-success';
+    case 'codechef': return 'fas fa-utensils text-warning';
+    case 'geeksforgeeks': return 'fas fa-graduation-cap text-primary';
+    default: return 'fas fa-code text-secondary';
+  }
+}
+
+function createPlatformDistributionChart(stats) {
+  if (!stats) return;
+
+  const ctx = document.getElementById('platformDistributionChart').getContext('2d');
+
+  new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: ['Codeforces', 'LeetCode', 'CodeChef', 'GeeksforGeeks'],
+      datasets: [{
+        data: [
+          stats.codeforces_solved || 0,
+          stats.leetcode_solved || 0,
+          stats.codechef_solved || 0,
+          stats.geeksforgeeks_solved || 0
+        ],
+        backgroundColor: ['#F44336', '#4CAF50', '#FFC107', '#2196F3']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' }
+      }
+    }
+  });
+}
+
+function createDifficultyDistributionChart(stats) {
+  if (!stats || !stats.leetcode_stats || !stats.codeforces_stats) return;
+
+  const ctx = document.getElementById('difficultyDistributionChart').getContext('2d');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Easy', 'Medium', 'Hard'],
+      datasets: [
+        {
+          label: 'LeetCode',
+          data: [
+            stats.leetcode_stats.easy || 0,
+            stats.leetcode_stats.medium || 0,
+            stats.leetcode_stats.hard || 0
+          ],
+          backgroundColor: '#4CAF50'
+        },
+        {
+          label: 'Codeforces',
+          data: [
+            stats.codeforces_stats.div3 || 0,
+            stats.codeforces_stats.div2 || 0,
+            stats.codeforces_stats.div1 || 0
+          ],
+          backgroundColor: '#F44336'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { stacked: false },
+        y: { stacked: false, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function createRatingHistoryChart(ratingHistory) {
+  if (!ratingHistory || ratingHistory.length === 0) return;
+
+  const ctx = document.getElementById('ratingHistoryChart').getContext('2d');
+  const platforms = {};
+  const colors = { codeforces: '#F44336', codechef: '#FFC107' };
+
+  ratingHistory.forEach(entry => {
+    if (!platforms[entry.platform]) {
+      platforms[entry.platform] = { times: [], ratings: [] };
+    }
+    platforms[entry.platform].times.push(entry.time);
+    platforms[entry.platform].ratings.push(entry.rating);
+  });
+
+  const datasets = Object.keys(platforms).map(platform => ({
+    label: platform.charAt(0).toUpperCase() + platform.slice(1),
+    data: platforms[platform].ratings,
+    borderColor: colors[platform] || '#2196F3',
+    backgroundColor: 'transparent',
+    pointBackgroundColor: colors[platform] || '#2196F3',
+    tension: 0.1
+  }));
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: platforms[Object.keys(platforms)[0]].times,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' }
+      },
+      scales: {
+        y: { beginAtZero: false }
+      }
+    }
+  });
+}
+</script>
+`})%>
+<div id="alertContainer"></div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>Your Dashboard</h2>
+  <div class="d-flex align-items-center">
+    <small class="text-muted me-3"
+      >Last refresh: <span id="lastRefresh">Never</span></small
+    >
+    <button class="btn btn-primary d-flex align-items-center" id="refreshData">
+      <i class="fas fa-sync-alt me-2 refresh-btn"></i>
+      <span id="refreshText">Refresh Data</span>
+    </button>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card stats-card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-subtitle mb-2 text-muted">Total Problems Solved</h6>
+            <h2 class="card-title mb-0" id="totalSolved">0</h2>
+          </div>
+          <div class="fs-1 text-primary">
+            <i class="fas fa-check-circle"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 d-none" id="codeforcesCard">
+    <div class="card stats-card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-subtitle mb-2 text-muted">Codeforces</h6>
+            <h2 class="card-title mb-0" id="codeforcesSolved">0</h2>
+            <div class="mt-2">
+              <small class="text-muted"
+                >Rating: <span id="codeforcesRating">Unrated</span></small>
+            </div>
+          </div>
+          <div class="fs-1 text-danger">
+            <i class="fas fa-fire"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 d-none" id="leetcodeCard">
+    <div class="card stats-card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-subtitle mb-2 text-muted">LeetCode</h6>
+            <h2 class="card-title mb-0" id="leetcodeSolved">0</h2>
+            <div class="mt-2">
+              <small class="text-muted"
+                >Rating: <span id="LeetcodeRating">Unrated</span></small
+              >
+            </div>
+          </div>
+          <div class="fs-1 text-success">
+            <i class="fas fa-laptop-code"></i> 
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="col-md-4 d-none" id="codeChefCard">
+  <div class="card stats-card h-100 border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="card-subtitle mb-2 text-muted">CodeChef</h6>
+          <h2 class="card-title mb-0" id="codeChefSolved">0</h2>
+          <div class="mt-2">
+            <small class="text-muted"
+              >Rating: <span id="codeforcesRating">Unrated</span></small>
+          </div>
+        </div>
+        <div class="fs-1 text-warning">
+          <i class="fas fa-utensils"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="col-md-4 d-none" id="GeeksforGeeksCard">
+  <div class="card stats-card h-100 border-0 shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="card-subtitle mb-2 text-muted">GeeksforGeeks</h6>
+          <h2 class="card-title mb-0" id="GeeksforGeeksSolved">0</h2>
+          <div class="mt-2">
+            <small class="text-muted"
+              >Rating: <span id="GeeksforGeeksRating">Unrated</span></small>
+          </div>
+        </div>
+        <div class="fs-1 text-primary">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row g-4 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Platform Distribution</h5>
+        <div class="chart-container" style="position: relative; height: 250px">
+          <canvas id="platformDistributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Problem Difficulty Distribution</h5>
+        <div class="chart-container" style="position: relative; height: 250px">
+          <canvas id="difficultyDistributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Rating History</h5>
+        <div class="chart-container" style="position: relative; height: 300px">
+          <canvas id="ratingHistoryChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Recent Submissions</h5>
+        <div id="recentSubmissions" class="mt-3">
+          <div class="d-flex justify-content-center">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

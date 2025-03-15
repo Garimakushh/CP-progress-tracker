@@ -1,0 +1,77 @@
+
+<%- include('layouts/main', { title: 'Register', styles: '', scripts: '' }) %>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <h2 class="text-center mb-4">Create an Account</h2>
+        
+        <% if (locals.error) { %>
+        <div class="alert alert-danger" role="alert">
+          <%= error %>
+        </div>
+        <% } %>
+        
+        <form action="/auth/register" method="POST">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="username" class="form-label">Username</label>
+              <input type="text" class="form-control" id="username" name="username" value="<%= locals.username || '' %>" required>
+            </div>
+            <div class="col-md-6">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" name="email" value="<%= locals.email || '' %>" required>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+          </div>
+          
+          <h4 class="mt-4 mb-3">Platform Usernames</h4>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="codeforces_handle" class="form-label">
+                <i class="fas fa-fire text-danger me-1"></i> Codeforces Handle
+              </label>
+              <input type="text" class="form-control" id="codeforces_handle" name="codeforces_handle" value="<%= locals.codeforces_handle || '' %>">
+            </div>
+            <div class="col-md-6">
+              <label for="leetcode_username" class="form-label">
+                <i class="fas fa-laptop-code text-success me-1"></i> LeetCode Username
+              </label>
+              <input type="text" class="form-control" id="leetcode_username" name="leetcode_username" value="<%= locals.leetcode_username || '' %>">
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="codechef_username" class="form-label">
+                <i class="fas fa-utensils text-warning me-1"></i> CodeChef Username
+              </label>
+              <input type="text" class="form-control" id="codechef_username" name="codechef_username" value="<%= locals.codechef_username || '' %>">
+              <small class="text-muted">Coming soon</small>
+            </div>
+            <div class="col-md-6">
+              <label for="geeksforgeeks_username" class="form-label">
+                <i class="fas fa-graduation-cap text-primary me-1"></i> GeeksforGeeks Username
+              </label>
+              <input type="text" class="form-control" id="geeksforgeeks_username" name="geeksforgeeks_username" value="<%= locals.geeksforgeeks_username || '' %>">
+              <small class="text-muted">Coming soon</small>
+            </div>
+          </div>
+          
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">Register</button>
+          </div>
+        </form>
+        
+        <div class="text-center mt-3">
+          <p>Already have an account? <a href="/auth/login">Login</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
